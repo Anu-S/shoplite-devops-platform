@@ -9,8 +9,8 @@ for the full design.
 
 ## Status
 - [x] Week 1 — Order API (FastAPI) + unit tests
-- [ ] Week 2 — Dockerize
-- [ ] Week 3 — Jenkins CI pipeline
+- [x] Week 2 — Dockerize
+- [x] Week 3 — Jenkins CI pipeline
 - [ ] Week 4 — Terraform basics + remote state
 - [ ] Week 5 — Terraform provisions the cluster
 - [ ] Week 6 — Kubernetes deployment
