@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo 'Code checked out from GitHub'
+            }
+        }
+
+        stage('Install & Test') {
+            agent {
+                docker {
+                    image 'python:3.12-slim'
+                    args '-u root'
+                }
+            }
+            steps {
+                sh 'pip install --no-cache-dir -r app/requirements-dev.txt'
+                sh 'pytest -v'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -f docker/Dockerfile -t shoplite-order-api:${BUILD_NUMBER} .'
+                sh 'docker tag shoplite-order-api:${BUILD_NUMBER} shoplite-order-api:latest'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Build #${BUILD_NUMBER} succeeded: tests passed and image shoplite-order-api:${BUILD_NUMBER} built."
+        }
+        failure {
+            echo "Build #${BUILD_NUMBER} failed — check the stage logs above."
+        }
+    }
+}
