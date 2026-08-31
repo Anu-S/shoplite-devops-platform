@@ -43,3 +43,5 @@ pytest -v
 | POST | `/orders` | Create an order |
 | GET | `/orders/{order_id}` | Get a single order |
 | GET | `/orders` | List all orders |
+
+running it from jenkins automatically by polling the git commit done automatically every 5 mins.
