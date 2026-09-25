@@ -1,0 +1,18 @@
+# Service — gives your 2 pods a single, stable network identity. Pods get
+# recreated (new IPs) all the time as Kubernetes reschedules them; the
+# Service is the fixed address that never changes, and it load-balances
+# across whichever pods are currently healthy.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-api-service
+spec:
+  selector:
+    app: order-api # this MUST match the Deployment's pod labels above
+  ports:
+    - protocol: TCP
+      port: 80 # port other things inside the cluster use to reach this service
+      targetPort: 8000 # the actual port the container listens on
+      nodePort: 30080 # must match kind-config.yaml's containerPort for the port mapping to work
+  type: NodePort # exposes it on the node's own port too, so we can reach it from outside the cluster for local testing with kind

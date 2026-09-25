@@ -1,0 +1,14 @@
+# kind cluster config — by default, kind's internal cluster network is
+# isolated from your host machine. This config maps a port on your
+# actual Windows machine through to a NodePort inside the cluster, so
+# you can hit the API from your own browser/curl.
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: shoplite
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080 # we'll set the Service's NodePort to this exact value
+        hostPort: 8081 # reachable at localhost:8080 on your Windows machine
+        protocol: TCP

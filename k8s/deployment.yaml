@@ -1,0 +1,59 @@
+# Deployment — tells Kubernetes HOW to run the app: which image, how many
+# copies (replicas), how much CPU/memory each gets, and how Kubernetes
+# should check if a copy is actually healthy.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-api
+  labels:
+    app: order-api
+spec:
+  replicas: 2 # two copies running at once — if one crashes, the other keeps serving traffic
+  selector:
+    matchLabels:
+      app: order-api
+  template:
+    metadata:
+      labels:
+        app: order-api
+    spec:
+      containers:
+        - name: order-api
+          image: shoplite-order-api:latest
+          imagePullPolicy: Never # tells k8s to use the image already loaded into kind, not try to pull from a registry
+          ports:
+            - containerPort: 8000
+
+          # Resource requests/limits — a real interview topic. "requests" is
+          # what Kubernetes guarantees this pod when scheduling it onto a
+          # node; "limits" is the hard ceiling it can't exceed.
+          resources:
+            requests:
+              cpu: "100m" # 0.1 of a CPU core
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+
+          # Readiness probe: is this pod ready to receive traffic RIGHT NOW?
+          # If this fails, Kubernetes stops sending it requests but doesn't
+          # restart it — useful during slow startup or temporary overload.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+
+          # Liveness probe: is this pod fundamentally broken? If this fails
+          # repeatedly, Kubernetes KILLS and RESTARTS the pod — this is the
+          # actual self-healing behavior people mean when they say "Kubernetes
+          # heals itself."
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
