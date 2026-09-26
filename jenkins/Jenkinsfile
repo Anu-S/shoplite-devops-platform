@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        KUBECONFIG = '/var/jenkins_home/kubeconfig'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -28,11 +32,36 @@ pipeline {
                 sh 'docker tag shoplite-order-api:${BUILD_NUMBER} shoplite-order-api:latest'
             }
         }
+
+        stage('Load Image into kind') {
+            steps {
+                // The image only exists in Jenkins' local Docker view right now.
+                // kind runs its own isolated Docker "node" containers, so the
+                // freshly built image has to be explicitly copied in — this is
+                // the kind-specific equivalent of "docker push" to a registry.
+                sh 'kind load docker-image shoplite-order-api:latest --name shoplite'
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh 'kubectl apply -f k8s/deployment.yaml'
+                sh 'kubectl apply -f k8s/service.yaml'
+
+                // Deployment.yaml still says image: shoplite-order-api:latest —
+                // same tag as before, so Kubernetes doesn't know a NEWER image
+                // exists behind that tag. A rollout restart forces it to tear
+                // down and recreate pods, which picks up the image we just
+                // loaded into kind's containerd.
+                sh 'kubectl rollout restart deployment/order-api'
+                sh 'kubectl rollout status deployment/order-api --timeout=60s'
+            }
+        }
     }
 
     post {
         success {
-            echo "Build #${BUILD_NUMBER} succeeded: tests passed and image shoplite-order-api:${BUILD_NUMBER} built."
+            echo "Build #${BUILD_NUMBER} succeeded: tests passed, image built, deployed to Kubernetes."
         }
         failure {
             echo "Build #${BUILD_NUMBER} failed — check the stage logs above."

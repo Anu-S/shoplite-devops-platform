@@ -18,3 +18,7 @@ venv/
 
 # OS
 .DS_Store
+
+# Kubernetes credentials - never commit
+kubeconfig*.yaml
+*.kubeconfig
